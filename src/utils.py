@@ -87,7 +87,7 @@ def read_excel_monthly(path_to_data: str, date_obj: datetime.datetime) -> pd.Dat
                 "Сумма операции с округлением",
             ]
             empty_df = pd.DataFrame(columns=columns)  # Если колонки нет, то возвращаем пустой df
-            logger.error("Column 'Дата операции' not found.  ")
+            logger.error("Column 'Дата операции' not found.")
             return empty_df
     except FileNotFoundError as e_2:  # Если файл не найден, то возвращаем пустой df
         columns = [
