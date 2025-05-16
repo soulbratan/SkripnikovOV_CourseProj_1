@@ -9,7 +9,7 @@ import requests
 from dotenv import load_dotenv
 
 # Создаём логгер для вспомогательных функций модуля views
-logger = logging.getLogger("views")  # Создание объекта логгера для модуля views
+logger = logging.getLogger(__name__)  # Создание объекта логгера
 logger.setLevel(logging.DEBUG)  # Устанавливаем уровень логирования
 console_handler = logging.StreamHandler()  # Создание обработчика с выводом в консоль
 console_handler.setLevel(logging.DEBUG)
@@ -108,3 +108,28 @@ def read_excel_monthly(path_to_data: str, date_obj: datetime.datetime) -> pd.Dat
         empty_df = pd.DataFrame(columns=columns)
         logger.error(f"{e_2}. Returned empty DF")
         return empty_df
+
+
+# Функция обработки DF для выдачи статистики по карте
+def cards_statistic(df_transactions: pd.DataFrame) -> list[dict]:
+    """
+    Функция принимает DataFrame с транзакциями и возвращает статистику по каждой карте.
+    Возвращает список словарей с номером карты, суммой трат и кэшбэк.
+    """
+    logger.info(f"Func <{cards_statistic.__name__}> started.")
+    expenses = df_transactions[df_transactions["Сумма операции"] < 0].copy()  # Фильтруем траты (отриц. знач.)
+    spending_by_card = expenses.groupby("Номер карты")["Сумма операции"].sum().reset_index()  # Групп карту и сумма
+    spending_by_card["Сумма трат"] = spending_by_card["Сумма операции"] * -1  # Делаем положительное знач.
+    spending_by_card["Кэшбэк"] = round(spending_by_card["Сумма трат"] / 100, 2)  # Считаем кэшбэк и округляем
+    data_list = list()
+    for i in range(len(spending_by_card)):  # Проходимся по DF и создаём словари для записи в список
+        cards_data = {
+            "last_digits": spending_by_card.iloc[i]["Номер карты"],
+            "total_spent": round(spending_by_card.iloc[i]["Сумма трат"].item(), 2),
+            "cashback": spending_by_card.iloc[i]["Кэшбэк"].item(),
+        }
+        data_list.append(cards_data)
+    logger.info(f"Func <{cards_statistic.__name__}> completed.")
+    if data_list == []:
+        data_list = [{}]
+    return data_list

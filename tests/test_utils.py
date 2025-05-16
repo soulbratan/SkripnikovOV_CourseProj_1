@@ -10,10 +10,18 @@ from src import utils
 
 
 # 1) Тест нормальной работы функции "date_convert" и вывода логов
-def test_date_convert(caplog: LogCaptureFixture) -> None:
+@pytest.mark.parametrize(
+    "date_str, expected",
+    [
+        ("2021-12-15 13:00:00", datetime.datetime(2021, 12, 15, 13, 0)),
+        ("2000-01-01 00:00:00", datetime.datetime(2000, 1, 1, 0, 0)),
+        ("2020-10-10 10:00:00", datetime.datetime(2020, 10, 10, 10, 0)),
+    ],
+)
+def test_date_convert(date_str: str, expected: datetime.datetime, caplog: LogCaptureFixture) -> None:
     """Тест нормальной работы функции date_convert"""
     caplog.set_level(logging.DEBUG, logger="views")
-    assert utils.date_convert("2021-12-15 13:00:00") == datetime.datetime(2021, 12, 15, 13, 0)
+    assert utils.date_convert(date_str) == expected
     assert "Func <date_convert> started" in caplog.text
     assert "Func <date_convert> successfully completed." in caplog.text
 
@@ -109,3 +117,20 @@ def test_read_excel_monthly_logging(x_1: datetime.datetime) -> None:
         # Проверяем, что logger.info вызывался с нужными сообщениями
         mock_logger.info.assert_any_call("Func <read_excel_monthly> started.")
         mock_logger.info.assert_any_call("Func <read_excel_monthly> successfully completed. Returned OK DF")
+
+
+def test_cards_statistic_basic(data_frame, cards_stats_expected) -> None:
+    with patch("src.utils.logger") as mock_logger:
+        # Вызываем функцию с тестовыми данными
+        result = utils.cards_statistic(data_frame)
+        # Проверяем корректность результата
+        assert result == cards_stats_expected
+        # Проверяем, что вызывались методы логгера
+        mock_logger.info.assert_any_call("Func <cards_statistic> started.")
+        mock_logger.info.assert_any_call("Func <cards_statistic> completed.")
+
+def test_cards_statistic_empty_df() -> None:
+    # Тест с пустым DataFrame
+    empty_df = pd.DataFrame(columns=['Номер карты', 'Сумма операции'])
+    result = utils.cards_statistic(empty_df)
+    assert result == [{}]
