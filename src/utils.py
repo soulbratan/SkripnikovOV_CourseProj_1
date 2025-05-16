@@ -154,3 +154,30 @@ def top5_transactions(df_transactions: pd.DataFrame) -> list[dict]:
         top5_list.append(tr_data)
     logger.info(f"Func <{top5_transactions.__name__}> completed.")
     return top5_list
+
+
+def exchange_rates(symbols: str) -> list[dict]:
+    """
+    Функция запрашивает у API данные курса валют, которые определены в JSON-файле пользователя.
+    """
+    logger.info(f"Func <{exchange_rates.__name__}> started.")
+    load_dotenv()  # Загружаем переменные из .env-файла
+    apilayer_token = os.getenv("API_KEY_rates")  # Получаем значение API_KEY
+    headers = {"apikey": f"{apilayer_token}"}
+    payload: dict = {}
+    params = {"base": "RUB", "symbols": f"{symbols}"}
+    url = "https://api.apilayer.com/exchangerates_data/latest"
+    try:
+        response = requests.request("GET", url, headers=headers, params=params, data=payload)
+        status_code = response.status_code
+        logger.info(f"Status:{status_code}")
+        result = response.json()
+        rates = list()
+        for rate_name in result.get("rates"):
+            data = {"currency": rate_name, "rate": round(1 / result["rates"].get(rate_name), 2)}
+            rates.append(data)
+        logger.info(f"Func <{exchange_rates.__name__}> completed.")
+        return rates
+    except requests.exceptions.RequestException as e:
+        logger.error(f"Ошибка запроса: {e}")
+        return [{"currency": "Нет данных", "rate": "Нет данных"}]

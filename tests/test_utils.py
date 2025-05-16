@@ -1,13 +1,13 @@
 # Модуль тестирования программных функций
 import datetime
 import logging
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch, Mock
 import pandas as pd
 import pytest
 from _pytest.logging import LogCaptureFixture
 
 from src import utils
-
+import requests
 
 # 1) Тест нормальной работы функции "date_convert" и вывода логов
 @pytest.mark.parametrize(
@@ -153,3 +153,52 @@ def test_top5_transactions_less_than_5(data_frame_2: pd.DataFrame) -> None:
     small_data = data_frame_2.iloc[:3]  # только 3 транзакции (2 успешные)
     result = utils.top5_transactions(small_data)
     assert len(result) == 2
+
+@patch('os.getenv')
+def test_exchange_rates_success(mock_getenv) -> None:
+    """Тест на успешного запроса и обработки ответа"""
+    mock_response = Mock()
+    mock_response.status_code = 200
+    mock_getenv.return_value = "mock_api_key"
+    mock_response.json.return_value = {
+        "rates": {
+            "USD": 0.014,
+            "EUR": 0.012
+        }
+    }
+    with patch('requests.request', return_value=mock_response) as mock_request:
+        result = utils.exchange_rates("USD, EUR")
+        # Проверяем, что функция возвращает правильные данные
+        assert len(result) == 2
+        assert {"currency": "USD", "rate": round(1 / 0.014, 2)} in result
+        assert {"currency": "EUR", "rate": round(1 / 0.012, 2)} in result
+        # Проверяем, что запрос был сделан с правильными параметрами
+        mock_request.assert_called_once_with("GET",
+                                             "https://api.apilayer.com/exchangerates_data/latest",
+                                             headers={"apikey": "mock_api_key"},
+                                             params={"base": "RUB", "symbols": "USD, EUR"},
+                                             data={}
+                                             )
+
+
+def test_exchange_rates_api_failure() -> None:
+    """Тест на обработку ошибки API"""
+    with patch('requests.request', side_effect=requests.exceptions.RequestException("API error")):
+        result = utils.exchange_rates("USD")
+        # Проверяем, что функция возвращает данные об ошибке
+        assert result == [{"currency": "Нет данных", "rate": "Нет данных"}]
+
+
+@patch("os.getenv")
+@patch("src.utils.logger")
+def test_exchange_rates_logging(mock_logger, mock_getenv):
+    # Тест на проверку логирования
+    mock_getenv.return_value = "mock_api_key"
+    mock_response = Mock()
+    mock_response.status_code = 200
+    mock_response.json.return_value = {"rates": {"USD": 0.014}}
+    with patch('requests.request', return_value=mock_response):
+        utils.exchange_rates("USD")
+        # Проверяем, что логирование работает
+        mock_logger.info.assert_any_call("Func <exchange_rates> started.")
+        mock_logger.info.assert_any_call("Func <exchange_rates> completed.")
