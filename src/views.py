@@ -1,16 +1,9 @@
 # Модуль с основной логикой функции для веб-страниц (страница "Главная", страница "События").
 # Собирает вспомогательные функции из utils.py в одну.
-from typing import Union, Dict, List, Any
+from typing import Any, Dict, List, Union
 
-JSONValue = Union[
-    str,
-    int,
-    float,
-    bool,
-    None,
-    List['JSONValue'],
-    Dict[str, 'JSONValue']
-]
+JSONValue = Union[str, int, float, bool, None, List["JSONValue"], Dict[str, "JSONValue"]]
+
 
 def main_page(user_data: str) -> JSONValue:
     """

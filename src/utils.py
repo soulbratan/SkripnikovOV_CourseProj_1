@@ -1,12 +1,12 @@
 # Модуль вспомогательных функций проекта.
-import pandas as pd
 import datetime
+import json
 import logging
 import os
+
+import pandas as pd
 import requests
 from dotenv import load_dotenv
-import json
-
 
 # Создаём логгер для вспомогательных функций модуля views
 logger = logging.getLogger("views")  # Создание объекта логгера для модуля views
@@ -35,3 +35,19 @@ def date_convert(user_date: str) -> datetime.datetime:
 
 
 # Функция приветствия
+def greeting(date_obj: datetime.datetime) -> str:
+    """
+    Функция принимает дату и время в формате 'datetime' и возвращает строку приветствия с учётом времени суток.
+    """
+    logger.info(f"Func <{greeting.__name__}> started.")
+    greet_str = ""
+    if date_obj.hour >= 6 and date_obj.hour < 12:
+        greet_str = "Доброе утро"
+    elif date_obj.hour >= 12 and date_obj.hour < 18:
+        greet_str = "Добрый день"
+    elif date_obj.hour >= 18 and date_obj.hour < 24:
+        greet_str = "Добрый вечер"
+    elif date_obj.hour >= 0 and date_obj.hour < 6:
+        greet_str = "Доброй ночи"
+    logger.info(f"Func <{greeting.__name__}> successfully completed. Returned: >{greet_str}<")
+    return greet_str
