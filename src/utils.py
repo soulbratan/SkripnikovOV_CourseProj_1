@@ -51,3 +51,60 @@ def greeting(date_obj: datetime.datetime) -> str:
         greet_str = "Доброй ночи"
     logger.info(f"Func <{greeting.__name__}> successfully completed. Returned: >{greet_str}<")
     return greet_str
+
+
+# Функция считывания и фильтрации excel файла по дате
+def read_excel_monthly(path_to_data: str, date_obj: datetime.datetime) -> pd.DataFrame:
+    """
+    Функция считывания операции из Excel файла и фильтрации по дате (с 1го числа месяца по заданное).
+    Аргументы функции: путь до файла, дата в формате YYYY-MM-DD HH:MM:SS
+    """
+    logger.info(f"Func <{read_excel_monthly.__name__}> started.")
+    try:
+        df = pd.read_excel(path_to_data, engine="openpyxl")  # Обращаемся к файлу .xlsx
+        if "Дата операции" in df.columns:  # Если колонка существует, то фильтруем даты за текущий месяц
+            df["Дата операции"] = pd.to_datetime(df["Дата операции"], format="%d.%m.%Y %H:%M:%S", errors="coerce")
+            filtered_df = df[
+                (df["Дата операции"] >= datetime.datetime(date_obj.year, date_obj.month, 1))
+                & (df["Дата операции"] <= datetime.datetime(date_obj.year, date_obj.month, date_obj.day))
+            ]
+            logger.info(f"Func <{read_excel_monthly.__name__}> successfully completed. Returned OK DF")
+            return filtered_df
+        else:
+            columns = [
+                "Дата операции",
+                "Дата платежа",
+                "Номер карты",
+                "Статус",
+                "Сумма операции",
+                "Валюта платежа",
+                "Кэшбэк",
+                "Категория",
+                "МСС",
+                "Описание",
+                "Бонусы (включая кэшбэк)",
+                "Округление на инвесткопилку",
+                "Сумма операции с округлением",
+            ]
+            empty_df = pd.DataFrame(columns=columns)  # Если колонки нет, то возвращаем пустой df
+            logger.error("Column 'Дата операции' not found.  ")
+            return empty_df
+    except FileNotFoundError as e_2:  # Если файл не найден, то возвращаем пустой df
+        columns = [
+            "Дата операции",
+            "Дата платежа",
+            "Номер карты",
+            "Статус",
+            "Сумма операции",
+            "Валюта платежа",
+            "Кэшбэк",
+            "Категория",
+            "МСС",
+            "Описание",
+            "Бонусы (включая кэшбэк)",
+            "Округление на инвесткопилку",
+            "Сумма операции с округлением",
+        ]
+        empty_df = pd.DataFrame(columns=columns)
+        logger.error(f"{e_2}. Returned empty DF")
+        return empty_df
