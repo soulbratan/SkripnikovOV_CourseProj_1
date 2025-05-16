@@ -52,7 +52,7 @@ def test_greeting(
 
 
 def test_read_excel_monthly_success() -> None:
-    # Создаем тестовые данные
+    """Тест нормальной работы read_excel_monthly"""
     test_data = {
         "Дата операции": [
             "01.01.2023 00:00:00",
@@ -61,27 +61,22 @@ def test_read_excel_monthly_success() -> None:
             "01.02.2023 00:00:00"
         ],
         "Сумма операции": [100, 200, 300, 400]
-    }
+    } # Создаем тестовые данные
     test_df = pd.DataFrame(test_data)
-    # Мокируем pd.read_excel, чтобы он возвращал тестовые данные
-    with patch("pandas.read_excel") as mock_read_excel:
+    with patch("pandas.read_excel") as mock_read_excel: # Мокируем pd.read_excel, чтобы он возвращал тестовые данные
         mock_read_excel.return_value = test_df
-        # Вызываем тестируемую функцию
         date_obj = datetime.datetime(2023, 1, 16)
-        result = utils.read_excel_monthly("dummy_path.xlsx", date_obj)
-        # Проверяем, что pd.read_excel был вызван с правильными аргументами
-        mock_read_excel.assert_called_once_with("dummy_path.xlsx", engine="openpyxl")
-        # Проверяем, что возвращается DataFrame
-        assert isinstance(result, pd.DataFrame)
-        # Проверяем фильтрацию (должны остаться только 2 записи <= 15.01.2023)
-        assert len(result) == 2
+        result = utils.read_excel_monthly("dummy_path.xlsx", date_obj) # Вызываем тестируемую функцию
+        mock_read_excel.assert_called_once_with("dummy_path.xlsx", engine="openpyxl") # Проверяем, что pd.read_excel был вызван с правильными аргументами
+        assert isinstance(result, pd.DataFrame) # Проверяем, что возвращается DataFrame
+        assert len(result) == 2 # Проверяем фильтрацию (должны остаться только 2 записи <= 15.01.2023)
         assert all(result["Дата операции"].dt.month == 1)
         assert all(result["Дата операции"].dt.day <= 15)
 
 
 def test_read_excel_monthly_missing_date_column(x_1: datetime.datetime, caplog: LogCaptureFixture) -> None:
-    # Создаем DataFrame без колонки "Дата операции"
-    test_df = pd.DataFrame({"Неправильная колонка": [1, 2, 3]})
+    """Тест отсутствия нужной колонки read_excel_monthly"""
+    test_df = pd.DataFrame({"Неправильная колонка": [1, 2, 3]}) # Создаем DataFrame без колонки "Дата операции"
     with patch("pandas.read_excel") as mock_read_excel:
         mock_read_excel.return_value = test_df
         result = utils.read_excel_monthly("dummy_path.xlsx", x_1)
@@ -93,8 +88,8 @@ def test_read_excel_monthly_missing_date_column(x_1: datetime.datetime, caplog: 
 
 
 def test_read_excel_monthly_file_not_found(x_1: datetime.datetime, caplog: LogCaptureFixture) -> None:
-    # Мокируем pd.read_excel, чтобы он вызывал FileNotFoundError
-    with patch("pandas.read_excel") as mock_read_excel:
+    """Тест отсутствия файла read_excel_monthly"""
+    with patch("pandas.read_excel") as mock_read_excel:# Моккируем pd.read_excel, чтобы он вызывал FileNotFoundError
         mock_read_excel.side_effect = FileNotFoundError("Файл не найден")
         result = utils.read_excel_monthly("nonexistent_file.xlsx", x_1)
         # Проверяем, что возвращается пустой DataFrame
@@ -105,32 +100,56 @@ def test_read_excel_monthly_file_not_found(x_1: datetime.datetime, caplog: LogCa
 
 
 def test_read_excel_monthly_logging(x_1: datetime.datetime) -> None:
+    """Тест логирования read_excel_monthly"""
     test_data = {
         "Дата операции": ["01.01.2023 00:00:00"],
         "Сумма операции": [100]
     }
     test_df = pd.DataFrame(test_data)
     with patch("pandas.read_excel") as mock_read_excel, \
-         patch("src.utils.logger") as mock_logger: # Мокируем pd.read_excel и logger
+         patch("src.utils.logger") as mock_logger: # Моккируем pd.read_excel и logger
         mock_read_excel.return_value = test_df
-        result = utils.read_excel_monthly("dummy_path.xlsx", x_1)
-        # Проверяем, что logger.info вызывался с нужными сообщениями
-        mock_logger.info.assert_any_call("Func <read_excel_monthly> started.")
+        result = utils.read_excel_monthly("dummy_path.xlsx", x_1) # Вызываем функцию с тестовыми данными
+        mock_logger.info.assert_any_call("Func <read_excel_monthly> started.") # Проверяем логирование
         mock_logger.info.assert_any_call("Func <read_excel_monthly> successfully completed. Returned OK DF")
 
 
-def test_cards_statistic_basic(data_frame, cards_stats_expected) -> None:
+def test_cards_statistic_basic(data_frame: pd.DataFrame, cards_stats_expected: list[dict]) -> None:
+    """Тест нормальной работы cards_statistic"""
     with patch("src.utils.logger") as mock_logger:
-        # Вызываем функцию с тестовыми данными
-        result = utils.cards_statistic(data_frame)
-        # Проверяем корректность результата
-        assert result == cards_stats_expected
-        # Проверяем, что вызывались методы логгера
-        mock_logger.info.assert_any_call("Func <cards_statistic> started.")
+        result = utils.cards_statistic(data_frame) # Вызываем функцию с тестовыми данными
+        assert result == cards_stats_expected # Проверяем корректность результата
+        mock_logger.info.assert_any_call("Func <cards_statistic> started.") # Проверяем логирование
         mock_logger.info.assert_any_call("Func <cards_statistic> completed.")
 
 def test_cards_statistic_empty_df() -> None:
-    # Тест с пустым DataFrame
-    empty_df = pd.DataFrame(columns=['Номер карты', 'Сумма операции'])
+    """Тест с пустым DataFrame"""
+    empty_df = pd.DataFrame(columns=["Номер карты", "Сумма операции"])
     result = utils.cards_statistic(empty_df)
     assert result == [{}]
+
+
+def test_top5_transactions_basic(data_frame_2: pd.DataFrame, top5_expected: list[dict]) -> None:
+    """Тест нормальной работы top5_transactions"""
+    with patch("src.utils.logger") as mock_logger: # патчим логгер
+        result = utils.top5_transactions(data_frame_2) # Вызываем функцию с тестовыми данными
+        assert top5_expected == result # Проверяем результат и ожидаемое значение
+        assert len(result) == 5 # Проверяем что вернулось 5 элементов
+        amounts = [t["amount"] for t in result]
+        assert amounts == sorted(amounts, reverse=True) # Проверяем что транзакции отсортированы по убыванию суммы
+        mock_logger.info.assert_any_call("Func <top5_transactions> started.") # Проверяем логирование
+        mock_logger.info.assert_any_call("Func <top5_transactions> completed.")
+
+def test_top5_transactions_empty_df() -> None:
+    """Тест с пустым DataFrame"""
+    empty_df = pd.DataFrame(columns=["Статус", "Сумма операции", "Дата операции",
+                                         "Категория", "Описание"])
+    result = utils.top5_transactions(empty_df)
+    assert result == []
+
+
+def test_top5_transactions_less_than_5(data_frame_2: pd.DataFrame) -> None:
+    """Тест когда успешных транзакций меньше 5"""
+    small_data = data_frame_2.iloc[:3]  # только 3 транзакции (2 успешные)
+    result = utils.top5_transactions(small_data)
+    assert len(result) == 2

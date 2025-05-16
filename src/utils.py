@@ -126,10 +126,31 @@ def cards_statistic(df_transactions: pd.DataFrame) -> list[dict]:
         cards_data = {
             "last_digits": spending_by_card.iloc[i]["Номер карты"],
             "total_spent": round(spending_by_card.iloc[i]["Сумма трат"].item(), 2),
-            "cashback": spending_by_card.iloc[i]["Кэшбэк"].item(),
+            "cashback": spending_by_card.iloc[i]["Кэшбэк"].item()
         }
         data_list.append(cards_data)
     logger.info(f"Func <{cards_statistic.__name__}> completed.")
     if data_list == []:
         data_list = [{}]
     return data_list
+
+
+def top5_transactions(df_transactions: pd.DataFrame) -> list[dict]:
+    """
+    Функция принимает DataFrame с транзакциями и возвращает топ 5 транзакций по сумме.
+    Возвращает список словарей: дата, сумма, категория, описание
+    """
+    logger.info(f"Func <{top5_transactions.__name__}> started.")
+    success_tr = df_transactions[df_transactions["Статус"] == "OK"]  # Фильтруем успешные транзакции
+    top5_tr = success_tr.iloc[success_tr["Сумма операции"].abs().argsort()[::-1]].head(5)  # Выбираем топ5 по сумме
+    top5_list = list()
+    for i in range(len(top5_tr)):  # Проходимся по строкам и перекладываем словари в новый список
+        tr_data = {
+            "date": top5_tr.iloc[i]["Дата операции"].strftime("%d.%m.%Y"),
+            "amount": top5_tr.iloc[i]["Сумма операции с округлением"].item(),
+            "category": top5_tr.iloc[i]["Категория"],
+            "description": top5_tr.iloc[i]["Описание"]
+        }
+        top5_list.append(tr_data)
+    logger.info(f"Func <{top5_transactions.__name__}> completed.")
+    return top5_list

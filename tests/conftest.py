@@ -51,3 +51,61 @@ def cards_stats_expected() -> list[dict]:
         }
     ]
     return expected_result
+
+
+@pytest.fixture
+def data_frame_2() -> pd.DataFrame:
+    test_data = pd.DataFrame({
+        'Статус': ['OK', 'FAIL', 'OK', 'OK', 'OK', 'OK', 'FAIL'],
+        'Сумма операции': [1000, 2000, 3000, 4000, 5000, 6000, 7000],
+        'Сумма операции с округлением': [1000, 2000, 3000, 4000, 5000, 6000, 7000],
+        'Дата операции': [
+            datetime.datetime(2023, 1, 1),
+            datetime.datetime(2023, 1, 2),
+            datetime.datetime(2023, 1, 3),
+            datetime.datetime(2023, 1, 4),
+            datetime.datetime(2023, 1, 5),
+            datetime.datetime(2023, 1, 6),
+            datetime.datetime(2023, 1, 7)
+        ],
+        'Категория': ['A', 'B', 'C', 'D', 'E', 'F', 'G'],
+        'Описание': ['Desc1', 'Desc2', 'Desc3', 'Desc4', 'Desc5', 'Desc6', 'Desc7']
+    })
+    return test_data
+
+
+@pytest.fixture
+def top5_expected() -> list[dict]:
+    expected_result = [
+        {
+            'date': '06.01.2023',
+            'amount': 6000,
+            'category': 'F',
+            'description': 'Desc6'
+        },
+        {
+            'date': '05.01.2023',
+            'amount': 5000,
+            'category': 'E',
+            'description': 'Desc5'
+        },
+        {
+            'date': '04.01.2023',
+            'amount': 4000,
+            'category': 'D',
+            'description': 'Desc4'
+        },
+        {
+            'date': '03.01.2023',
+            'amount': 3000,
+            'category': 'C',
+            'description': 'Desc3'
+        },
+        {
+            'date': '01.01.2023',
+            'amount': 1000,
+            'category': 'A',
+            'description': 'Desc1'
+        }
+    ]
+    return expected_result
