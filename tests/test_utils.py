@@ -202,11 +202,7 @@ def test_exchange_rates_logging(mock_logger: MagicMock, mock_getenv: MagicMock) 
 
 @pytest.mark.parametrize(
     "stock, s_price",
-    [
-        ("AMZN", "123.04"),
-        ("IBM", "100.10"),
-        ("GOOGl", "323.25")
-    ],
+    [("AMZN", "123.04"), ("IBM", "100.10"), ("GOOGl", "323.25")],
 )
 def test_stocks_prices_success(mock_env: MagicMock, stock: str, s_price: str) -> None:
     """Тестирование успешного получения данных с использованием параметризации"""
@@ -262,14 +258,13 @@ def test_stocks_prices_empty_input() -> None:
 
 
 def test_read_excel_success() -> None:
-    mock_df = pd.DataFrame({
-        "Дата операции": ["2023-01-01"],
-        "Сумма операции": [1000]
-    })
-    with patch("pandas.read_excel", return_value=mock_df) as mock_read, \
-            patch("pathlib.Path.resolve", return_value="/fake/path/operations.xlsx"):
+    mock_df = pd.DataFrame({"Дата операции": ["2023-01-01"], "Сумма операции": [1000]})
+    with (
+        patch("pandas.read_excel", return_value=mock_df) as mock_read,
+        patch("pathlib.Path.resolve", return_value="/fake/path/operations.xlsx"),
+    ):
         result = utils.read_excel_transactions()
-        assert isinstance(result, pd.DataFrame) # Проверяем что функция вернула ожидаемый DataFrame
+        assert isinstance(result, pd.DataFrame)  # Проверяем что функция вернула ожидаемый DataFrame
         assert not result.empty
         mock_read.assert_called_once()
 
@@ -299,16 +294,12 @@ def test_read_excel_transactions_logging() -> None:
         mock_logger.info.assert_any_call("Func <read_excel_transactions> started.")  # Проверяем логирование
         mock_logger.info.assert_any_call("Func <read_excel_transactions> successfully completed. Returned OK DF")
 
+
 @pytest.mark.parametrize(
     "category",
-    [
-        ("Продукты"),
-        ("Кафе"),
-        ("Транспорт"),
-        ("Аптека")
-    ],
+    [("Продукты"), ("Кафе"), ("Транспорт"), ("Аптека")],
 )
-def test_search_full_match_first_column(sample_transactions, category):
+def test_search_full_match_first_column(sample_transactions: pd.DataFrame, category: str) -> None:
     """Тест поиска по полному совпадению функции simple_search"""
     result = utils.simple_search(sample_transactions, category)
     assert len(result) == 1
@@ -316,15 +307,9 @@ def test_search_full_match_first_column(sample_transactions, category):
 
 
 @pytest.mark.parametrize(
-    "category, expected",
-    [
-        ("продук", "Продукты"),
-        ("каф", "Кафе"),
-        ("тран", "Транспорт"),
-        ("апт", "Аптека")
-    ]
+    "category, expected", [("продук", "Продукты"), ("каф", "Кафе"), ("тран", "Транспорт"), ("апт", "Аптека")]
 )
-def test_search_partial_match(sample_transactions: pd.DataFrame, category, expected) -> None:
+def test_search_partial_match(sample_transactions: pd.DataFrame, category: str, expected: str) -> None:
     """Тест поиска по полному совпадению функции simple_search"""
     result = utils.simple_search(sample_transactions, category)
     assert len(result) == 1

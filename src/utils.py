@@ -54,7 +54,7 @@ def greeting(date_obj: datetime.datetime) -> str:
 
 
 # Функция считывания и фильтрации excel файла по дате
-def read_excel_monthly(path_to_data: str, date_obj: datetime.datetime) -> pd.DataFrame:
+def read_excel_monthly(path_to_data: str | Path, date_obj: datetime.datetime) -> pd.DataFrame:
     """
     Функция считывания операции из Excel файла и фильтрации по дате (с 1го числа месяца по заданное).
     Аргументы функции: путь до файла, дата в формате YYYY-MM-DD HH:MM:SS
@@ -250,8 +250,10 @@ def read_excel_transactions() -> pd.DataFrame:
 
 
 def simple_search(transactions: pd.DataFrame, search_string: str) -> pd.DataFrame:
+    logger.info(f"Func <{simple_search.__name__}> started.")
     filtered_df = transactions[
         transactions["Категория"].str.lower().str.contains(search_string.lower(), na=False)
         | transactions["Описание"].str.lower().str.contains(search_string.lower(), na=False)
     ]
+    logger.info(f"Func <{simple_search.__name__}> completed.")
     return filtered_df
