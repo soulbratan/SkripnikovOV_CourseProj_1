@@ -126,7 +126,7 @@ def cards_statistic(df_transactions: pd.DataFrame) -> list[dict]:
         cards_data = {
             "last_digits": spending_by_card.iloc[i]["Номер карты"],
             "total_spent": round(spending_by_card.iloc[i]["Сумма трат"].item(), 2),
-            "cashback": spending_by_card.iloc[i]["Кэшбэк"].item()
+            "cashback": spending_by_card.iloc[i]["Кэшбэк"].item(),
         }
         data_list.append(cards_data)
     logger.info(f"Func <{cards_statistic.__name__}> completed.")
@@ -149,7 +149,7 @@ def top5_transactions(df_transactions: pd.DataFrame) -> list[dict]:
             "date": top5_tr.iloc[i]["Дата операции"].strftime("%d.%m.%Y"),
             "amount": top5_tr.iloc[i]["Сумма операции с округлением"].item(),
             "category": top5_tr.iloc[i]["Категория"],
-            "description": top5_tr.iloc[i]["Описание"]
+            "description": top5_tr.iloc[i]["Описание"],
         }
         top5_list.append(tr_data)
     logger.info(f"Func <{top5_transactions.__name__}> completed.")
@@ -181,3 +181,36 @@ def exchange_rates(symbols: str) -> list[dict]:
     except requests.exceptions.RequestException as e:
         logger.error(f"Ошибка запроса: {e}")
         return [{"currency": "Нет данных", "rate": "Нет данных"}]
+
+
+def stocks_prices(symbols: list[str]) -> list[dict]:
+    """
+    Функция запрашивает у API данные цен на акции, названия которых определены во входящем списке.
+    """
+    logger.info(f"Func <{stocks_prices.__name__}> started.")
+    stocks = list()
+    load_dotenv()  # Загружаем переменные из .env-файла
+    apilayer_token = os.getenv("API_KEY_stocks")  # Получаем значение API_KEY
+    payload: dict = {}
+    url = "https://www.alphavantage.co/query"
+    try:
+        for symb in symbols:
+            params = {"function": "GLOBAL_QUOTE", "symbol": f"{symb}", "apikey": f"{apilayer_token}"}
+            response = requests.request("GET", url, params=params, data=payload)
+            status_code = response.status_code
+            logger.info(f"Status:{status_code}")
+            result = response.json()
+            stock = {
+                "stock": result["Global Quote"].get("01. symbol"),
+                "price": float(result["Global Quote"].get("05. price")),
+            }
+            stocks.append(stock)
+            logger.info(f"Func <{stocks_prices.__name__}> got data from API.")
+    except KeyError:
+        logger.error(f"<{stocks_prices.__name__}>. Ключ не найден. Нет данных от API. Returned empty list[dict]")
+        stocks = [{}]
+    except requests.exceptions.RequestException as e:
+        logger.error(f"<{stocks_prices.__name__}>. Ошибка запроса: {e}. Returned empty list[dict]")
+        stocks = [{}]
+    logger.info(f"Func <{stocks_prices.__name__}> completed.")
+    return stocks
