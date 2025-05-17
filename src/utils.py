@@ -67,7 +67,7 @@ def read_excel_monthly(path_to_data: str | Path, date_obj: datetime.datetime) ->
             filtered_df = df[
                 (df["Дата операции"] >= datetime.datetime(date_obj.year, date_obj.month, 1))
                 & (df["Дата операции"] <= datetime.datetime(date_obj.year, date_obj.month, date_obj.day))
-            ]
+            ].reset_index(drop=True)
             logger.info(f"Func <{read_excel_monthly.__name__}> successfully completed. Returned OK DF")
             return filtered_df
         else:
@@ -250,36 +250,52 @@ def read_excel_transactions() -> pd.DataFrame:
 
 
 def simple_search(transactions: pd.DataFrame, search_string: str) -> pd.DataFrame:
+    """
+    Функция поиска в столбцах Категория и Описание.
+    На входе DF и строка поиска.
+    На выходе отфильтрованный DF.
+    """
     logger.info(f"Func <{simple_search.__name__}> started.")
     filtered_df = transactions[
         transactions["Категория"].str.lower().str.contains(search_string.lower(), na=False)
         | transactions["Описание"].str.lower().str.contains(search_string.lower(), na=False)
-    ]
+    ].reset_index(drop=True)
     logger.info(f"Func <{simple_search.__name__}> completed.")
     return filtered_df
 
 
-def spending_by_category(transactions: pd.DataFrame, category: str, date: Optional[str] = None) -> pd.DataFrame:
+def report_to_file(filename: Optional[str] = None) -> Callable:
     """
-    Функция возвращает траты по заданной категории за последние три месяца (от переданной даты).
-    Аргументы:
-    - transactions: датафрейм с транзакциями
-    - category: название категории
-    - date: опциональная дата (если не передана, берется текущая дата)
-    Возвращает:
-    - Датафрейм с тратами по указанной категории за последние 3 месяца
+    Декоратор для записи результатов работы функции-отчёта в файл.
+    Всегда сохраняет отчёты в папку data.
+    Параметры:
+    - filename: имя файла (если None, генерируется автоматически)
     """
-    if date is None:
-        date = datetime.datetime.now().strftime("%Y-%m-%d")
-    # Преобразуем дату в datetime
-    end_date = pd.to_datetime(date)
-    start_date = end_date - pd.DateOffset(months=3)
-    # Фильтруем транзакции
-    transactions['date'] = pd.to_datetime(transactions['date'])
-    filtered = transactions[
-        (transactions['category'] == category) &
-        (transactions['date'] >= start_date) &
-        (transactions['date'] <= end_date)
-        ]
-    return filtered
+    def decorator(func: Callable) -> Callable:
+        def wrapper(*args, **kwargs) -> Any:
+            result = func(*args, **kwargs) # Вызываем оригинальную функцию
+            base_dir = Path(__file__).parent.parent  # Определяем базовую директорию (на уровень выше src)
+            reports_dir = base_dir / "data"
+            reports_dir.mkdir(exist_ok=True)  # создаём папку, если её нет
+            # Определяем имя файла
+            if filename is None:
+                current_date = datetime.datetime.now().strftime("%Y-%m-%d")
+                report_filename = f"report_{current_date}.txt"
+            else:
+                report_filename = filename
+
+            full_path = reports_dir / report_filename # Полный путь к файлу
+            # Записываем результат в файл
+            try:
+                with open(full_path, 'w', encoding='utf-8') as f:
+                    if isinstance(result, pd.DataFrame):
+                        f.write(result.to_string())
+                    else:
+                        f.write(str(result))
+                logger.info(f"Report successfully saved to file: {full_path}")
+            except Exception as e:
+                logger.error(f"Error saving report: {e}")
+            return result
+        return wrapper
+    return decorator
 
