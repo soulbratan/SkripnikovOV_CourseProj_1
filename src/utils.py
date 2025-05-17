@@ -3,7 +3,8 @@ import datetime
 import logging
 import os
 from pathlib import Path
-from typing import Optional, Callable, Any
+from typing import Any, Callable, Optional
+
 import pandas as pd
 import requests
 from dotenv import load_dotenv
@@ -271,9 +272,10 @@ def report_to_file(filename: Optional[str] = None) -> Callable:
     Параметры:
     - filename: имя файла (если None, генерируется автоматически)
     """
+
     def decorator(func: Callable) -> Callable:
-        def wrapper(*args, **kwargs) -> Any:
-            result = func(*args, **kwargs) # Вызываем оригинальную функцию
+        def wrapper(*args: Any, **kwargs: Any) -> Any:
+            result = func(*args, **kwargs)  # Вызываем оригинальную функцию
             base_dir = Path(__file__).parent.parent  # Определяем базовую директорию (на уровень выше src)
             reports_dir = base_dir / "data"
             reports_dir.mkdir(exist_ok=True)  # создаём папку, если её нет
@@ -284,10 +286,10 @@ def report_to_file(filename: Optional[str] = None) -> Callable:
             else:
                 report_filename = filename
 
-            full_path = reports_dir / report_filename # Полный путь к файлу
+            full_path = reports_dir / report_filename  # Полный путь к файлу
             # Записываем результат в файл
             try:
-                with open(full_path, 'w', encoding='utf-8') as f:
+                with open(full_path, "w", encoding="utf-8") as f:
                     if isinstance(result, pd.DataFrame):
                         f.write(result.to_string())
                     else:
@@ -296,6 +298,7 @@ def report_to_file(filename: Optional[str] = None) -> Callable:
             except Exception as e:
                 logger.error(f"Error saving report: {e}")
             return result
-        return wrapper
-    return decorator
 
+        return wrapper
+
+    return decorator
