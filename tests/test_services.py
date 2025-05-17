@@ -39,7 +39,7 @@ def test_users_search_json_format(sample_transactions: pd.DataFrame) -> None:
         patch("src.utils.simple_search", return_value=sample_transactions.iloc[0:1]),
     ):
         result = users_search("Продукты")
-        json_data = json.loads(result)  # Проверяем что результат можно корректно распарсить
+        json_data = json.loads(result)  # Проверяем что результат можно корректно разобрать
         assert json.dumps(json_data)  # Проверка сериализации обратно
 
 

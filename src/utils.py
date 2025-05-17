@@ -3,7 +3,7 @@ import datetime
 import logging
 import os
 from pathlib import Path
-
+from typing import Optional, Callable, Any
 import pandas as pd
 import requests
 from dotenv import load_dotenv
@@ -257,3 +257,29 @@ def simple_search(transactions: pd.DataFrame, search_string: str) -> pd.DataFram
     ]
     logger.info(f"Func <{simple_search.__name__}> completed.")
     return filtered_df
+
+
+def spending_by_category(transactions: pd.DataFrame, category: str, date: Optional[str] = None) -> pd.DataFrame:
+    """
+    Функция возвращает траты по заданной категории за последние три месяца (от переданной даты).
+    Аргументы:
+    - transactions: датафрейм с транзакциями
+    - category: название категории
+    - date: опциональная дата (если не передана, берется текущая дата)
+    Возвращает:
+    - Датафрейм с тратами по указанной категории за последние 3 месяца
+    """
+    if date is None:
+        date = datetime.datetime.now().strftime("%Y-%m-%d")
+    # Преобразуем дату в datetime
+    end_date = pd.to_datetime(date)
+    start_date = end_date - pd.DateOffset(months=3)
+    # Фильтруем транзакции
+    transactions['date'] = pd.to_datetime(transactions['date'])
+    filtered = transactions[
+        (transactions['category'] == category) &
+        (transactions['date'] >= start_date) &
+        (transactions['date'] <= end_date)
+        ]
+    return filtered
+
