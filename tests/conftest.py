@@ -89,3 +89,12 @@ def top5_expected() -> list[dict]:
 def mock_env(monkeypatch: MonkeyPatch) -> None:
     """Фикстура для мокирования переменных окружения"""
     monkeypatch.setenv("API_KEY_stocks", "test_api_key")
+
+
+@pytest.fixture
+def sample_transactions() -> pd.DataFrame:
+    return pd.DataFrame({
+        "Категория": ["Продукты", "Кафе", "Транспорт", "Аптека", None],
+        "Описание": ["Супермаркет", "Ресторан", "Метро", "Аптека 24", "Онлайн платеж"],
+        "Сумма": [1000, 500, 150, 300, 200]
+    })

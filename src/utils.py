@@ -2,6 +2,7 @@
 import datetime
 import logging
 import os
+from pathlib import Path
 
 import pandas as pd
 import requests
@@ -213,3 +214,44 @@ def stocks_prices(symbols: list[str]) -> list[dict]:
         stocks = [{}]
     logger.info(f"Func <{stocks_prices.__name__}> completed.")
     return stocks
+
+
+def read_excel_transactions() -> pd.DataFrame:
+    """
+    Функция считывания операции из Excel файла и обработки ошибок чтения.
+    """
+    logger.info(f"Func <{read_excel_transactions.__name__}> started.")
+    try:
+        current_dir = Path(__file__).parent
+        file_path = current_dir.parent / "data" / "operations.xlsx"
+        absolute_path = file_path.resolve()
+        df = pd.read_excel(absolute_path, engine="openpyxl")  # Обращаемся к файлу .xlsx
+        logger.info(f"Func <{read_excel_transactions.__name__}> successfully completed. Returned OK DF")
+        return df
+    except FileNotFoundError as e_2:  # Если файл не найден, то возвращаем пустой df
+        columns = [
+            "Дата операции",
+            "Дата платежа",
+            "Номер карты",
+            "Статус",
+            "Сумма операции",
+            "Валюта платежа",
+            "Кэшбэк",
+            "Категория",
+            "МСС",
+            "Описание",
+            "Бонусы (включая кэшбэк)",
+            "Округление на инвесткопилку",
+            "Сумма операции с округлением",
+        ]
+        empty_df = pd.DataFrame(columns=columns)
+        logger.error(f"{e_2}. Returned empty DF")
+        return empty_df
+
+
+def simple_search(transactions: pd.DataFrame, search_string: str) -> pd.DataFrame:
+    filtered_df = transactions[
+        transactions["Категория"].str.lower().str.contains(search_string.lower(), na=False)
+        | transactions["Описание"].str.lower().str.contains(search_string.lower(), na=False)
+    ]
+    return filtered_df

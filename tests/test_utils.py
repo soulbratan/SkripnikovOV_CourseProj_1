@@ -205,7 +205,7 @@ def test_exchange_rates_logging(mock_logger: MagicMock, mock_getenv: MagicMock) 
     [
         ("AMZN", "123.04"),
         ("IBM", "100.10"),
-        ("GOOGl", "323.25"),
+        ("GOOGl", "323.25")
     ],
 )
 def test_stocks_prices_success(mock_env: MagicMock, stock: str, s_price: str) -> None:
@@ -259,3 +259,87 @@ def test_stocks_prices_empty_input() -> None:
     """Тестирование обработки пустого входного списка"""
     result = utils.stocks_prices([])
     assert result == []
+
+
+def test_read_excel_success() -> None:
+    mock_df = pd.DataFrame({
+        "Дата операции": ["2023-01-01"],
+        "Сумма операции": [1000]
+    })
+    with patch("pandas.read_excel", return_value=mock_df) as mock_read, \
+            patch("pathlib.Path.resolve", return_value="/fake/path/operations.xlsx"):
+        result = utils.read_excel_transactions()
+        assert isinstance(result, pd.DataFrame) # Проверяем что функция вернула ожидаемый DataFrame
+        assert not result.empty
+        mock_read.assert_called_once()
+
+
+def test_read_excel_transactions_file_not_found(caplog: LogCaptureFixture) -> None:
+    """Тест отсутствия файла read_excel_transactions"""
+    with patch("pandas.read_excel") as mock_read_excel:  # Моккируем pd.read_excel, чтобы он вызывал FileNotFoundError
+        mock_read_excel.side_effect = FileNotFoundError("Файл не найден")
+        result = utils.read_excel_transactions()
+        # Проверяем, что возвращается пустой DataFrame
+        assert isinstance(result, pd.DataFrame)
+        assert len(result) == 0
+        assert "Дата операции" in result.columns
+        assert "Returned empty DF" in caplog.text
+
+
+def test_read_excel_transactions_logging() -> None:
+    """Тест логирования read_excel_transactions"""
+    test_data = {"Дата операции": ["01.01.2023 00:00:00"], "Сумма операции": [100]}
+    test_df = pd.DataFrame(test_data)
+    with (
+        patch("pandas.read_excel") as mock_read_excel,
+        patch("src.utils.logger") as mock_logger,
+    ):  # Моккируем pd.read_excel и logger
+        mock_read_excel.return_value = test_df
+        utils.read_excel_transactions()  # Вызываем функцию с тестовыми данными
+        mock_logger.info.assert_any_call("Func <read_excel_transactions> started.")  # Проверяем логирование
+        mock_logger.info.assert_any_call("Func <read_excel_transactions> successfully completed. Returned OK DF")
+
+@pytest.mark.parametrize(
+    "category",
+    [
+        ("Продукты"),
+        ("Кафе"),
+        ("Транспорт"),
+        ("Аптека")
+    ],
+)
+def test_search_full_match_first_column(sample_transactions, category):
+    """Тест поиска по полному совпадению функции simple_search"""
+    result = utils.simple_search(sample_transactions, category)
+    assert len(result) == 1
+    assert result.iloc[0]["Категория"] == category
+
+
+@pytest.mark.parametrize(
+    "category, expected",
+    [
+        ("продук", "Продукты"),
+        ("каф", "Кафе"),
+        ("тран", "Транспорт"),
+        ("апт", "Аптека")
+    ]
+)
+def test_search_partial_match(sample_transactions: pd.DataFrame, category, expected) -> None:
+    """Тест поиска по полному совпадению функции simple_search"""
+    result = utils.simple_search(sample_transactions, category)
+    assert len(result) == 1
+    assert result.iloc[0]["Категория"] == expected
+
+
+def test_search_empty_string(sample_transactions: pd.DataFrame) -> None:
+    """Тест поиска пустой строки функции simple_search"""
+    result = utils.simple_search(sample_transactions, "")
+    pd.testing.assert_frame_equal(result, sample_transactions)
+
+
+def test_search_empty_dataframe_1() -> None:
+    """Тест поиска по пустому df совпадению функции simple_search"""
+    empty_df = pd.DataFrame(columns=["Категория", "Описание", "Сумма"])
+    result = utils.simple_search(empty_df, "поиск")
+    assert len(result) == 0
+    assert list(result.columns) == ["Категория", "Описание", "Сумма"]
