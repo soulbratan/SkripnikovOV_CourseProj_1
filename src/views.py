@@ -41,7 +41,3 @@ def main_page(user_date: str) -> JSONValue:
     main_page_answer = json.dumps(result, indent=4, ensure_ascii=False)
     return main_page_answer
 
-
-# res = main_page("2021-12-15 15:00:00")
-# print(type(res))
-# print(res)
