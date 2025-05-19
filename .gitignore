@@ -173,3 +173,4 @@ cython_debug/
 # PyPI configuration file
 .pypirc
 try_alg/
+data/*.txt
